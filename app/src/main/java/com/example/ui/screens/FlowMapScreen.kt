@@ -223,11 +223,17 @@ fun FlowMapScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.width(8.dp))
+                            val isCurrentYear = selectedYear == LocalDate.now().year
                             IconButton(
                                 onClick = { viewModel.setHeatmapYear(selectedYear + 1) },
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(24.dp),
+                                enabled = !isCurrentYear
                             ) {
-                                Icon(Icons.Filled.ChevronRight, contentDescription = "Next Year", tint = MaterialTheme.colorScheme.primary)
+                                Icon(
+                                    Icons.Filled.ChevronRight, 
+                                    contentDescription = "Next Year", 
+                                    tint = if (isCurrentYear) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary
+                                )
                             }
                         }
                     }
