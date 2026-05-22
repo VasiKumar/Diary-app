@@ -196,6 +196,7 @@ fun FlowMapScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
+                    val selectedYear by viewModel.selectedHeatmapYear.collectAsStateWithLifecycle()
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -207,12 +208,28 @@ fun FlowMapScreen(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = "140-day Lookback",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = { viewModel.setHeatmapYear(selectedYear - 1) },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(Icons.Filled.ChevronLeft, contentDescription = "Previous Year", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = selectedYear.toString(),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(
+                                onClick = { viewModel.setHeatmapYear(selectedYear + 1) },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(Icons.Filled.ChevronRight, contentDescription = "Next Year", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -271,16 +288,22 @@ fun FlowMapScreen(
                                         verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         weekDays.forEach { day ->
-                                            val cellColor = when (day.category) {
-                                                DayCategory.PRODUCTIVE -> {
-                                                    if (day.completedCount >= 3) SageProductive else SageProductive.copy(alpha = 0.5f)
+                                            val isCurrentYear = day.date.year == selectedYear
+                                            
+                                            val cellColor = if (isCurrentYear) {
+                                                when (day.category) {
+                                                    DayCategory.PRODUCTIVE -> {
+                                                        if (day.completedCount >= 3) SageProductive else SageProductive.copy(alpha = 0.5f)
+                                                    }
+                                                    DayCategory.UNPRODUCTIVE -> CoralMissed
+                                                    DayCategory.NEUTRAL -> if (MaterialTheme.colorScheme.background == Color(0xFF111418)) NeutralEmpty else MaterialTheme.colorScheme.surfaceVariant
                                                 }
-                                                DayCategory.UNPRODUCTIVE -> CoralMissed
-                                                DayCategory.NEUTRAL -> if (MaterialTheme.colorScheme.background == Color(0xFF111418)) NeutralEmpty else MaterialTheme.colorScheme.surfaceVariant
+                                            } else {
+                                                Color.Transparent
                                             }
 
                                             val isSelected = selectedHeatmapDay?.date == day.date
-                                            val cellBorder = if (isSelected) {
+                                            val cellBorder = if (isSelected && isCurrentYear) {
                                                 BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                                             } else {
                                                 null
@@ -292,7 +315,7 @@ fun FlowMapScreen(
                                                     .clip(RoundedCornerShape(3.dp))
                                                     .background(cellColor)
                                                     .then(if (cellBorder != null) Modifier.border(cellBorder, RoundedCornerShape(3.dp)) else Modifier)
-                                                    .clickable {
+                                                    .clickable(enabled = isCurrentYear) {
                                                         selectedHeatmapDay = day
                                                     }
                                                     .testTag("heatmap_day_${day.date}")
@@ -416,9 +439,7 @@ fun FlowMapScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    val past7Days = remember(heatmapData) {
-                        heatmapData.takeLast(7)
-                    }
+                    val past7Days by viewModel.past7DaysHeatmapData.collectAsStateWithLifecycle()
 
                     if (past7Days.isNotEmpty()) {
                         CustomWeeklyBarChart(days = past7Days)

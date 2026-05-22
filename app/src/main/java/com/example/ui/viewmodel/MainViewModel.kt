@@ -84,15 +84,72 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         (activeCompletions.toFloat() / maxPossible.toFloat()).coerceIn(0.0f, 1.0f)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0f)
 
-    // 4. Heatmap list details for the past 140 days (approx. 20 weeks)
-    val heatmapData: StateFlow<List<HeatmapDay>> = combine(repository.allGoals, repository.allHabitCompletions, repository.allHabits) { goals, completions, habits ->
+    // 4. Heatmap list details for the selected year
+    private val _selectedHeatmapYear = MutableStateFlow(LocalDate.now().year)
+    val selectedHeatmapYear: StateFlow<Int> = _selectedHeatmapYear.asStateFlow()
+
+    fun setHeatmapYear(year: Int) {
+        _selectedHeatmapYear.value = year
+    }
+
+    val heatmapData: StateFlow<List<HeatmapDay>> = combine(
+        repository.allGoals, 
+        repository.allHabitCompletions, 
+        repository.allHabits,
+        _selectedHeatmapYear
+    ) { goals, completions, habits, year ->
+        val data = mutableListOf<HeatmapDay>()
+        val goalsMap = goals.groupBy { it.date }
+        val completionsMap = completions.groupBy { it.date }
+        
+        val firstDayOfYear = LocalDate.of(year, 1, 1)
+        val lastDayOfYear = LocalDate.of(year, 12, 31)
+        
+        // Find the Sunday on or before Jan 1st. DayOfWeek.value is 1 (Mon) to 7 (Sun)
+        val firstDayOfWeekIndex = firstDayOfYear.dayOfWeek.value
+        val daysToSubtract = if (firstDayOfWeekIndex == 7) 0 else firstDayOfWeekIndex
+        val startDate = firstDayOfYear.minusDays(daysToSubtract.toLong())
+
+        // Find the Saturday on or after Dec 31st
+        val lastDayOfWeekIndex = lastDayOfYear.dayOfWeek.value
+        val daysToAdd = if (lastDayOfWeekIndex == 7) 6 else 6 - lastDayOfWeekIndex
+        val endDate = lastDayOfYear.plusDays(daysToAdd.toLong())
+
+        val totalDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1
+
+        for (i in 0 until totalDays) {
+            val date = startDate.plusDays(i)
+            val dateStr = date.format(dateFormatter)
+            
+            val dayGoals = goalsMap[dateStr] ?: emptyList()
+            val dayCompletions = completionsMap[dateStr] ?: emptyList()
+            
+            val totalGoals = dayGoals.size
+            val completedGoals = dayGoals.count { it.isCompleted }
+            val completedHabits = dayCompletions.size
+            
+            val category = when {
+                (completedGoals + completedHabits) > 0 -> DayCategory.PRODUCTIVE
+                totalGoals > 0 && completedGoals == 0 -> DayCategory.UNPRODUCTIVE
+                else -> DayCategory.NEUTRAL
+            }
+            
+            data.add(HeatmapDay(date, category, completedGoals + completedHabits))
+        }
+        data
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val past7DaysHeatmapData: StateFlow<List<HeatmapDay>> = combine(
+        repository.allGoals, 
+        repository.allHabitCompletions, 
+        repository.allHabits
+    ) { goals, completions, habits ->
         val data = mutableListOf<HeatmapDay>()
         val goalsMap = goals.groupBy { it.date }
         val completionsMap = completions.groupBy { it.date }
         
         val today = LocalDate.now()
-        val totalDays = 140
-        for (i in (totalDays - 1) downTo 0) {
+        for (i in 6 downTo 0) {
             val date = today.minusDays(i.toLong())
             val dateStr = date.format(dateFormatter)
             
