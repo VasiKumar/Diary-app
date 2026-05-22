@@ -1,0 +1,6 @@
+{
+  "name": "MindFlow",
+  "description": "An offline personal productivity and diary companion. Track habits, complete daily goals, write a daily journal, view a GitHub-style productivity heatmap, and receive local reminders.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
