@@ -36,7 +36,7 @@ It focuses on:
 ### 🛠️ Setup Steps
 
 #### 1️⃣ Open Project
-```text
+
 Open Android Studio → Click "Open" → Select project folder
 2️⃣ Let Gradle Sync
 
