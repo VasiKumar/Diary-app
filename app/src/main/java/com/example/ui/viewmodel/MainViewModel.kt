@@ -72,8 +72,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val totalOpportunities = goalsIn7Days.size + (habits.size * 7)
         val totalCompletions = completedGoalsIn7Days + completionsIn7Days
         
-        if (totalOpportunities == 0) 1.0f else totalCompletions.toFloat() / totalOpportunities.toFloat()
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
+        if (totalOpportunities == 0) 0.0f else totalCompletions.toFloat() / totalOpportunities.toFloat()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0f)
 
     // 3. Habit success rate (completions / active days of tracking in the last 30 days)
     val habitSuccessRate: StateFlow<Float> = combine(repository.allHabitCompletions, repository.allHabits) { completions, habits ->
