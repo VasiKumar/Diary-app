@@ -3,21 +3,69 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    
-    <!-- Outer flow circle ring -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:pathData="M 54,20 A 34,34 0 1,1 53.9,20 Z" />
 
-    <!-- Core productive checklist checkmark -->
+    <!-- Glowing backdrop of the diary to create premium depth -->
+    <path
+        android:fillColor="#15FFFFFF"
+        android:pathData="M 54,54 m -40,0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0" />
+
+    <!-- Bookmark ribbon hanging from the top/center to below the book bottom -->
+    <path
+        android:fillColor="#FF8A80"
+        android:pathData="M 52,26 h 8 v 58 l -4,-3 l -4,3 Z" />
+
+    <!-- High-end elegant diary/journal binder (cover layer) -->
+    <!-- Bound on the left, elegantly rounded on the right -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 36,28 h 30 a 6,6 0 0,1 6,6 v 40 a 6,6 0 0,1 -6,6 h -30 a 2,2 0 0,1 -2,-2 v -48 a 2,2 0 0,1 2,-2 Z" />
+
+    <!-- Soft accent inner cover strip on the left margin (giving binder aesthetic) -->
+    <path
+        android:fillColor="#A7FFEB"
+        android:pathData="M 37,30 h 4 v 48 h -4 Z" />
+
+    <!-- Embossed Flow Wave Lines on the diary (symbolizing MindFlow) -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#81C784"
-        android:strokeWidth="6"
+        android:strokeColor="#004D40"
+        android:strokeWidth="2.5"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M 40,54 L 50,64 L 68,44" />
+        android:pathData="M 46,42 c 3,-2 6,2 9,0" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#004D40"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M 46,50 c 3,-2 6,2 9,0 s 6,-2 9,0" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#004D40"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M 46,58 c 3,-2 6,2 9,0" />
+
+    <!-- Spiral binder rings on the left side of the book to clearly represent a diary/journal notebook -->
+    <!-- Rings: 5 pristine metallic loops wrapping the spine -->
+    <path
+        android:fillColor="#E0F2F1"
+        android:pathData="M 30,34 h 6 v 3 h -6 Z" />
+    <path
+        android:fillColor="#E0F2F1"
+        android:pathData="M 30,42 h 6 v 3 h -6 Z" />
+    <path
+        android:fillColor="#E0F2F1"
+        android:pathData="M 30,50 h 6 v 3 h -6 Z" />
+    <path
+        android:fillColor="#E0F2F1"
+        android:pathData="M 30,58 h 6 v 3 h -6 Z" />
+    <path
+        android:fillColor="#E0F2F1"
+        android:pathData="M 30,66 h 6 v 3 h -6 Z" />
+
+    <!-- Small elegant gold star in the top-right cover to indicate a high-quality journal/diary -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M 64,36 l 1,2 h 2 l -1.5,1 l 0.5,2 l -2,-1 L 62,41 l 0.5,-2 l -1.5,-1 h 2 Z" />
+
 </vector>

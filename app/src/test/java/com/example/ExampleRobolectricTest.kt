@@ -2,6 +2,7 @@ package com.example
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.core.app.ActivityScenario
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,5 +18,15 @@ class ExampleRobolectricTest {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val appName = context.getString(R.string.app_name)
     assertEquals("MindFlow", appName)
+  }
+
+  @Test
+  fun `launch MainActivity without crashing`() {
+    ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+      scenario.onActivity { activity ->
+        // Assert it started successfully
+        assertEquals(true, activity != null)
+      }
+    }
   }
 }
