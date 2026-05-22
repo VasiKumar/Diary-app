@@ -377,7 +377,9 @@ fun JournalScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                viewModel.saveDiaryEntryImmediately(journalText)
+                                if (selectedDate == LocalDate.now()) {
+                                    viewModel.saveDiaryEntryImmediately(journalText)
+                                }
                                 viewModel.setWritingMode(false)
                             },
                             modifier = Modifier.testTag("btn_close_editor")
@@ -400,37 +402,57 @@ fun JournalScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Filled.CloudDone,
-                                    contentDescription = "Saved offline",
-                                    tint = SageProductive,
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Auto-saved completely offline",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = SageProductive,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                            if (selectedDate == LocalDate.now()) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Filled.CloudDone,
+                                        contentDescription = "Saved offline",
+                                        tint = SageProductive,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Auto-saved completely offline",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = SageProductive,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            } else {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Visibility,
+                                        contentDescription = "Read-Only Mode",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Viewing Past Entry (Read-Only)",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
                             }
                         }
 
                         Button(
                             onClick = {
-                                viewModel.saveDiaryEntryImmediately(journalText)
+                                if (selectedDate == LocalDate.now()) {
+                                    viewModel.saveDiaryEntryImmediately(journalText)
+                                }
                                 viewModel.setWritingMode(false)
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                containerColor = if (selectedDate == LocalDate.now()) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (selectedDate == LocalDate.now()) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                             ),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.padding(end = 8.dp)
                         ) {
                             Text(
-                                text = "Done",
+                                text = if (selectedDate == LocalDate.now()) "Done" else "Close",
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -453,12 +475,19 @@ fun JournalScreen(
                         TextField(
                             value = journalText,
                             onValueChange = {
-                                journalText = it
-                                viewModel.saveDiaryEntry(it, "Neutral")
+                                if (selectedDate == LocalDate.now()) {
+                                    journalText = it
+                                    viewModel.saveDiaryEntry(it, "Neutral")
+                                }
                             },
+                            readOnly = selectedDate != LocalDate.now(),
                             placeholder = {
                                 Text(
-                                    text = "Write your thoughts freely here...\n\nHow is your day? Highlight accomplishments, clarify worries, document experiences, or capture inspiring ideas. No limits, pure thought.",
+                                    text = if (selectedDate == LocalDate.now()) {
+                                        "Write your thoughts freely here...\n\nHow is your day? Highlight accomplishments, clarify worries, document experiences, or capture inspiring ideas. No limits, pure thought."
+                                    } else {
+                                        "No diary entry was written for this day."
+                                    },
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                                     lineHeight = 28.sp,

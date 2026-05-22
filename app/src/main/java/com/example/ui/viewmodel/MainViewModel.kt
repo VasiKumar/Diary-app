@@ -135,14 +135,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 .debounce(800)
                 .filterNotNull()
                 .collectLatest { content ->
-                    val dateStr = _selectedDate.value.format(dateFormatter)
-                    val entry = DiaryEntry(
-                        date = dateStr,
-                        content = content,
-                        mood = "Neutral",
-                        lastUpdated = System.currentTimeMillis()
-                    )
-                    repository.insertDiaryEntry(entry)
+                    if (_selectedDate.value == LocalDate.now()) {
+                        val dateStr = _selectedDate.value.format(dateFormatter)
+                        val entry = DiaryEntry(
+                            date = dateStr,
+                            content = content,
+                            mood = "Neutral",
+                            lastUpdated = System.currentTimeMillis()
+                        )
+                        repository.insertDiaryEntry(entry)
+                    }
                 }
         }
     }
@@ -198,10 +200,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // Diary Entries
     fun saveDiaryEntry(content: String, mood: String) {
-        _pendingDiarySave.value = content
+        if (_selectedDate.value == LocalDate.now()) {
+            _pendingDiarySave.value = content
+        }
     }
 
     fun saveDiaryEntryImmediately(content: String) {
+        if (_selectedDate.value != LocalDate.now()) {
+            _pendingDiarySave.value = null // Cancel any pending debounced save
+            return
+        }
         viewModelScope.launch {
             val dateStr = _selectedDate.value.format(dateFormatter)
             val entry = DiaryEntry(

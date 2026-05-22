@@ -51,6 +51,18 @@ fun TodayScreen(
     val habitCompletions by viewModel.currentHabitCompletions.collectAsStateWithLifecycle()
     val diaryEntry by viewModel.currentDiaryEntry.collectAsStateWithLifecycle()
     val streak by viewModel.currentStreak.collectAsStateWithLifecycle()
+    val allDiaries by viewModel.allDiaries.collectAsStateWithLifecycle()
+
+    val writtenDates = remember(allDiaries) {
+        allDiaries.filter { it.content.isNotBlank() }.map { it.date }.toSet()
+    }
+
+    var isCalendarExpanded by remember { mutableStateOf(false) }
+    var calendarMonth by remember { mutableStateOf(selectedDate.withDayOfMonth(1)) }
+
+    LaunchedEffect(selectedDate) {
+        calendarMonth = selectedDate.withDayOfMonth(1)
+    }
 
     var newGoalText by remember { mutableStateOf("") }
     val isToday = selectedDate == LocalDate.now()
@@ -78,52 +90,232 @@ fun TodayScreen(
                 shape = RoundedCornerShape(28.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { viewModel.selectDate(selectedDate.minusDays(1)) },
-                        modifier = Modifier.testTag("prev_date_button")
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Previous Day",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        IconButton(
+                            onClick = { viewModel.selectDate(selectedDate.minusDays(1)) },
+                            modifier = Modifier.testTag("prev_date_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Previous Day",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .weight(1.0f)
+                                .clickable { isCalendarExpanded = !isCalendarExpanded }
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = if (isToday) "TODAY" else selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy")).uppercase(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp
+                                )
+                                Text(
+                                    text = selectedDateFormatted,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Light, // light tracking-tight feel from spec
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = if (isCalendarExpanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                                contentDescription = "Toggle Calendar",
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { viewModel.selectDate(selectedDate.plusDays(1)) },
+                            modifier = Modifier.testTag("next_date_button"),
+                            enabled = selectedDate.isBefore(LocalDate.now())
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "Next Day",
+                                tint = if (selectedDate.isBefore(LocalDate.now())) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                            )
+                        }
                     }
 
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1.0f)
+                    // Collapsible Inline Calendar View
+                    AnimatedVisibility(
+                        visible = isCalendarExpanded,
+                        enter = expandVertically(animationSpec = spring()) + fadeIn(),
+                        exit = shrinkVertically(animationSpec = spring()) + fadeOut()
                     ) {
-                        Text(
-                            text = if (isToday) "TODAY" else selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy")).uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                        Text(
-                            text = selectedDateFormatted,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Light, // light tracking-tight feel from spec
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f))
+                                .padding(bottom = 16.dp)
+                        ) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                    IconButton(
-                        onClick = { viewModel.selectDate(selectedDate.plusDays(1)) },
-                        modifier = Modifier.testTag("next_date_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Next Day",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                            // Calendar Month Selector Header
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = { calendarMonth = calendarMonth.minusMonths(1) }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.ChevronLeft,
+                                        contentDescription = "Previous Month",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                Text(
+                                    text = calendarMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                IconButton(
+                                    onClick = { calendarMonth = calendarMonth.plusMonths(1) }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.ChevronRight,
+                                        contentDescription = "Next Month",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Grid of Days
+                            val firstDayOfWeek = calendarMonth.dayOfWeek.value % 7
+                            val daysInMonth = calendarMonth.lengthOfMonth()
+                            val totalCells = firstDayOfWeek + daysInMonth
+                            val rowsCount = (totalCells + 6) / 7
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                // Weekdays header Row
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    val weekDays = listOf("Su", "Mo", "Tu", "We", "Th", "Fr", "Sa")
+                                    weekDays.forEach { dayName ->
+                                        Text(
+                                            text = dayName,
+                                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                // Days Grid rows
+                                for (row in 0 until rowsCount) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        for (col in 0 until 7) {
+                                            val index = row * 7 + col
+                                            val dayOfMonth = index - firstDayOfWeek + 1
+
+                                            if (dayOfMonth in 1..daysInMonth) {
+                                                val date = calendarMonth.withDayOfMonth(dayOfMonth)
+                                                val isPastOrToday = !date.isAfter(LocalDate.now())
+                                                val dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                                                val hasDiary = writtenDates.contains(dateStr)
+                                                val isSelected = date == selectedDate
+
+                                                // Highlighter design:
+                                                // Selected day: Glowing filled primary background
+                                                // Written days: Glowing soft primary container
+                                                // Unwritten days: Subtle transparent background with standard surface outline integration
+                                                // Future days: Gray and completely disabled
+                                                val backgroundColor = when {
+                                                    !isPastOrToday -> Color.Transparent
+                                                    isSelected -> MaterialTheme.colorScheme.primary
+                                                    hasDiary -> MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                                                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                                                }
+
+                                                val contentColor = when {
+                                                    !isPastOrToday -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+                                                    isSelected -> MaterialTheme.colorScheme.onPrimary
+                                                    hasDiary -> MaterialTheme.colorScheme.primary
+                                                    else -> MaterialTheme.colorScheme.onSurface
+                                                }
+
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .aspectRatio(1f)
+                                                        .padding(2.dp)
+                                                        .clip(CircleShape)
+                                                        .background(backgroundColor)
+                                                        .clickable(enabled = isPastOrToday) {
+                                                            viewModel.selectDate(date)
+                                                        },
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Column(
+                                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                                        verticalArrangement = Arrangement.Center
+                                                    ) {
+                                                        Text(
+                                                            text = dayOfMonth.toString(),
+                                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                                fontWeight = if (isSelected) FontWeight.Bold else if (hasDiary) FontWeight.Bold else FontWeight.Normal
+                                                            ),
+                                                            color = contentColor
+                                                        )
+                                                        if (hasDiary && isPastOrToday && !isSelected) {
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(4.dp)
+                                                                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                                Spacer(modifier = Modifier.weight(1f))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -197,7 +389,7 @@ fun TodayScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
+                    .clickable(enabled = isToday || diaryEntry != null) {
                         viewModel.setWritingMode(true)
                         onNavigateToJournal()
                     },
@@ -223,7 +415,11 @@ fun TodayScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (diaryEntry != null) "Today's Written Page" else "Saved completely offline",
+                                text = if (diaryEntry != null) {
+                                    if (isToday) "Today's Written Page" else "Written Page"
+                                } else {
+                                    "Saved completely offline"
+                                },
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -232,8 +428,8 @@ fun TodayScreen(
 
                         if (diaryEntry != null) {
                             Icon(
-                                imageVector = Icons.Filled.Edit,
-                                contentDescription = "Edit Diary",
+                                imageVector = if (isToday) Icons.Filled.Edit else Icons.Filled.Visibility,
+                                contentDescription = if (isToday) "Edit Diary" else "View Diary",
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -253,7 +449,7 @@ fun TodayScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Tap to open and edit page →",
+                            text = if (isToday) "Tap to open and edit page →" else "Tap to open and view page (Read-Only) →",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
@@ -264,35 +460,37 @@ fun TodayScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Capture your mind today. No limits, pure thought.",
+                                text = if (isToday) "Capture your mind today. No limits, pure thought." else "No diary entry was written for this day.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                                 textAlign = TextAlign.Center
                             )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(
-                                onClick = {
-                                    viewModel.setWritingMode(true)
-                                    onNavigateToJournal()
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                ),
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Add,
-                                    contentDescription = "New Page",
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "New Page",
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                            if (isToday) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(
+                                    onClick = {
+                                        viewModel.setWritingMode(true)
+                                        onNavigateToJournal()
+                                    },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Add,
+                                        contentDescription = "New Page",
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "New Page",
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
                             }
                         }
                     }
